@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 /* ============================================================
    DATA — extracted from the original static markup.
@@ -98,7 +98,6 @@ const PROJECTS = [
       "FastAPI backend exposing an endpoint that takes resume + job description text and returns a match score in real time.",
       "Deployed live on Render, so the full pipeline — input to score — is accessible end-to-end, not just running locally.",
     ],
-    // TODO(conversion): source file used placeholder "#" links for GitHub/Live demo — fill in real URLs.
     links: [
       { label: "GitHub →", href: "https://github.com/Gowtham-1109/AI_project" },
       { label: "Live demo →", href: "https://ai-project-1-0rpu.onrender.com/" },
@@ -114,7 +113,6 @@ const PROJECTS = [
       "Data-driven test design using pytest fixtures and parametrization for scalable coverage.",
       "Structured execution reports generated with pytest-html and Allure.",
     ],
-    // TODO(conversion): placeholder link, add real GitHub URL.
     links: [{ label: "GitHub →", href: "https://github.com/Gowtham-1109/Rest-API-Client-Framework" }],
   },
   {
@@ -126,7 +124,6 @@ const PROJECTS = [
       "Page Object Model applied to encapsulate elements and actions into reusable classes, eliminating duplication.",
       "Explicit waits and custom locator strategies for reliable handling of dynamic elements.",
     ],
-    // TODO(conversion): placeholder link, add real GitHub URL.
     links: [{ label: "GitHub →", href: "https://github.com/Gowtham-1109/AUTOMATION-Pytest--Saucedemo-" }],
   },
   {
@@ -137,7 +134,6 @@ const PROJECTS = [
       "Parameterized load scripts built with CSV Data Config and JSON extractors for request correlation.",
       "Throughput, response time, and error-rate metrics analyzed to understand behavior under load.",
     ],
-    // TODO(conversion): placeholder link, add real GitHub URL.
     links: [{ label: "GitHub →", href: "https://github.com/Gowtham-1109/Jmeter-" }],
   },
 ];
@@ -206,6 +202,47 @@ export default function GowthamPortfolio() {
   const [showCursor, setShowCursor] = useState(true);
   const [showJson, setShowJson] = useState(false);
   const startedRef = useRef(false);
+  const rootRef = useRef(null);
+
+  // Scroll-reveal: sections fade/slide up as they enter the viewport.
+  useEffect(() => {
+    const prefersReduced =
+      typeof window !== "undefined" &&
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    const nodes = rootRef.current
+      ? rootRef.current.querySelectorAll(".reveal")
+      : [];
+
+    if (prefersReduced || !("IntersectionObserver" in window)) {
+      nodes.forEach((n) => n.classList.add("in-view"));
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("in-view");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
+    );
+
+    nodes.forEach((n) => observer.observe(n));
+    return () => observer.disconnect();
+  }, []);
+
+  // Interactive glow: track pointer position per-card for a cursor-following highlight.
+  const handleCardPointerMove = useCallback((e) => {
+    const card = e.currentTarget;
+    const rect = card.getBoundingClientRect();
+    card.style.setProperty("--mx", `${e.clientX - rect.left}px`);
+    card.style.setProperty("--my", `${e.clientY - rect.top}px`);
+  }, []);
 
   // Typing animation — replaces the original inline <script>.
   useEffect(() => {
@@ -247,28 +284,38 @@ export default function GowthamPortfolio() {
   }, []);
 
   return (
-    <div className="gp-root">
+    <div className="gp-root" ref={rootRef}>
       <style>{`
         .gp-root{
-          --paper:#EEF1F5; --surface:#FFFFFF; --ink:#14181F; --muted:#5B6472;
-          --line:#D8DEE6; --ok:#1E8E5A; --ok-bg:#E7F5EE; --req:#3452D9;
-          --req-bg:#EAEEFC; --violet:#7C5CFF; --violet-bg:#F1EDFF;
-          --amber:#D97706; --amber-bg:#FEF3E2;
+          --bg:#0A0E16; --bg-grid: rgba(255,255,255,0.028);
+          --surface:#121826; --surface-2:#171F30; --ink:#E7ECF6; --muted:#8892A6;
+          --line:#232C40; --line-soft: rgba(255,255,255,0.06);
+          --ok:#34D399; --ok-bg: rgba(52,211,153,0.12);
+          --req:#6C8CFF; --req-bg: rgba(108,140,255,0.14);
+          --violet:#A78BFA; --violet-bg: rgba(167,139,250,0.14);
+          --amber:#FBBF6C; --amber-bg: rgba(251,191,108,0.14);
           --mono:'JetBrains Mono', monospace; --sans:'Inter', sans-serif;
-          background:var(--paper); color:var(--ink); font-family:var(--sans);
+          background:
+            radial-gradient(1100px 520px at 12% -8%, rgba(108,140,255,0.10), transparent 60%),
+            radial-gradient(900px 500px at 92% 4%, rgba(167,139,250,0.08), transparent 55%),
+            var(--bg);
+          color:var(--ink); font-family:var(--sans);
           line-height:1.6; -webkit-font-smoothing:antialiased;
         }
         .gp-root *{box-sizing:border-box; margin:0; padding:0;}
-        .gp-root a{color:var(--req); text-decoration:none;}
-        .gp-root a:hover{text-decoration:underline;}
-        .gp-root ::selection{background:var(--req); color:#fff;}
+        .gp-root a{color:var(--req); text-decoration:none; transition:color .15s ease;}
+        .gp-root a:hover{color:#93A9FF; text-decoration:underline;}
+        .gp-root ::selection{background:var(--req); color:#0A0E16;}
         .gp-root :focus-visible{outline:2px solid var(--req); outline-offset:3px;}
         .gp-root .wrap{max-width:920px; margin:0 auto; padding:0 24px;}
 
+        .gp-root .reveal{opacity:0; transform:translateY(16px); transition:opacity .6s ease, transform .6s ease;}
+        .gp-root .reveal.in-view{opacity:1; transform:translateY(0);}
+
         .gp-root .topbar{
           position:sticky; top:0; z-index:50;
-          background:rgba(238,241,245,0.88); backdrop-filter:blur(8px);
-          border-bottom:1px solid var(--line);
+          background:rgba(10,14,22,0.72); backdrop-filter:blur(10px);
+          border-bottom:1px solid var(--line-soft);
         }
         .gp-root .topbar-inner{
           max-width:920px; margin:0 auto; padding:14px 24px;
@@ -278,8 +325,13 @@ export default function GowthamPortfolio() {
         .gp-root .brand{font-weight:600; color:var(--ink);}
         .gp-root .brand span{color:var(--req);}
         .gp-root .nav-routes{display:flex; gap:18px; flex-wrap:wrap;}
-        .gp-root .nav-routes a{color:var(--muted); font-size:12.5px;}
-        .gp-root .nav-routes a:hover{color:var(--ink); text-decoration:none;}
+        .gp-root .nav-routes a{position:relative; color:var(--muted); font-size:12.5px; text-decoration:none; padding-bottom:2px;}
+        .gp-root .nav-routes a::after{
+          content:""; position:absolute; left:0; right:100%; bottom:-2px; height:1px;
+          background:var(--req); transition:right .22s ease;
+        }
+        .gp-root .nav-routes a:hover{color:var(--ink);}
+        .gp-root .nav-routes a:hover::after{right:0;}
         @media (max-width:640px){ .gp-root .nav-routes{display:none;} }
 
         .gp-root .hero{padding:64px 0 40px;}
@@ -290,12 +342,19 @@ export default function GowthamPortfolio() {
         .gp-root .eyebrow .dot{
           display:inline-block; width:7px; height:7px; border-radius:50%;
           background:var(--ok); margin-right:8px; vertical-align:middle;
+          box-shadow:0 0 0 0 rgba(52,211,153,0.6);
           animation:gp-pulse 2s ease-in-out infinite;
         }
-        @keyframes gp-pulse{ 0%,100%{opacity:1;} 50%{opacity:0.35;} }
+        @keyframes gp-pulse{
+          0%{opacity:1; box-shadow:0 0 0 0 rgba(52,211,153,0.5);}
+          70%{opacity:0.5; box-shadow:0 0 0 6px rgba(52,211,153,0);}
+          100%{opacity:1; box-shadow:0 0 0 0 rgba(52,211,153,0);}
+        }
         .gp-root h1{
           font-size:clamp(32px,5vw,46px); font-weight:800; letter-spacing:-0.02em;
           line-height:1.12; margin-bottom:10px;
+          background:linear-gradient(90deg, #F2F5FC 0%, #C9D3EE 60%, #93A9FF 100%);
+          -webkit-background-clip:text; background-clip:text; color:transparent;
         }
         .gp-root .role-line{
           font-family:var(--mono); font-size:15px; color:var(--req); font-weight:600;
@@ -304,26 +363,36 @@ export default function GowthamPortfolio() {
         .gp-root .subhead{max-width:56ch; color:var(--muted); font-size:16px; margin-bottom:32px;}
 
         .gp-root .terminal{
-          background:var(--ink); color:#DCE3EC; border-radius:10px;
+          position:relative; background:var(--surface); color:#DCE3EC; border-radius:10px;
           font-family:var(--mono); font-size:13.5px;
-          box-shadow:0 20px 40px -18px rgba(20,24,31,0.45);
+          box-shadow:0 24px 50px -20px rgba(0,0,0,0.65);
           overflow:hidden; margin-bottom:8px;
+          border:1px solid var(--line);
         }
+        .gp-root .terminal::before{
+          content:""; position:absolute; inset:-1px; border-radius:11px; padding:1px;
+          background:conic-gradient(from var(--gp-angle,0deg), var(--req), var(--violet), var(--ok), var(--amber), var(--req));
+          -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          -webkit-mask-composite: xor; mask-composite: exclude;
+          opacity:0.55; animation:gp-spin 6s linear infinite; pointer-events:none;
+        }
+        @keyframes gp-spin{ to{ --gp-angle:360deg; } }
+        @property --gp-angle{ syntax:'<angle>'; inherits:false; initial-value:0deg; }
         .gp-root .terminal-head{
-          display:flex; align-items:center; gap:8px;
-          padding:11px 14px; background:#1E232C; border-bottom:1px solid #2A303B;
+          position:relative; display:flex; align-items:center; gap:8px;
+          padding:11px 14px; background:#0F141F; border-bottom:1px solid var(--line);
         }
         .gp-root .terminal-head span{width:10px; height:10px; border-radius:50%; display:inline-block;}
-        .gp-root .terminal-head span:nth-child(1){background:#E5544D;}
-        .gp-root .terminal-head span:nth-child(2){background:#E5B04D;}
-        .gp-root .terminal-head span:nth-child(3){background:#4DBE6A;}
+        .gp-root .terminal-head span:nth-child(1){background:#F0716B;}
+        .gp-root .terminal-head span:nth-child(2){background:#F0C36B;}
+        .gp-root .terminal-head span:nth-child(3){background:#6BE398;}
         .gp-root .terminal-title{margin-left:8px; font-size:11.5px; color:#7C8698; flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-        .gp-root .terminal-body{padding:20px 22px 24px; min-height:190px;}
+        .gp-root .terminal-body{position:relative; padding:20px 22px 24px; min-height:190px;}
         .gp-root .term-line{white-space:pre-wrap; word-break:break-word;}
-        .gp-root .prompt{color:#4DBE6A;}
+        .gp-root .prompt{color:#6BE398;}
         .gp-root .cmd{color:#DCE3EC;}
         .gp-root .cursor{
-          display:inline-block; width:7px; height:15px; background:#DCE3EC;
+          display:inline-block; width:7px; height:15px; background:#93A9FF;
           vertical-align:text-bottom; margin-left:2px;
           animation:gp-blink 1s step-end infinite;
         }
@@ -331,8 +400,8 @@ export default function GowthamPortfolio() {
         .gp-root .json-out{color:#9FB0C6; margin-top:12px; opacity:0; transition:opacity .5s ease; white-space:pre-wrap; line-height:1.75;}
         .gp-root .json-out.show{opacity:1;}
         .gp-root .json-key{color:#7CB8F0;}
-        .gp-root .json-str{color:#B5E29A;}
-        .gp-root .json-bool{color:#E5B04D;}
+        .gp-root .json-str{color:#7EE0A8;}
+        .gp-root .json-bool{color:#FBBF6C;}
         .gp-root .caption{font-family:var(--mono); font-size:11.5px; color:var(--muted); margin-top:10px;}
 
         .gp-root section{padding:52px 0;}
@@ -345,24 +414,36 @@ export default function GowthamPortfolio() {
         .gp-root .method.post{ color:var(--req); background:var(--req-bg); }
         .gp-root .path{font-family:var(--mono); font-size:14px; color:var(--ink); font-weight:600;}
         .gp-root .status-chip{font-family:var(--mono); font-size:11px; color:var(--ok); margin-left:auto;}
-        .gp-root h2.section-title{font-size:22px; font-weight:800; letter-spacing:-0.01em; margin-bottom:6px;}
+        .gp-root h2.section-title{font-size:22px; font-weight:800; letter-spacing:-0.01em; margin-bottom:6px; color:var(--ink);}
         .gp-root .section-sub{color:var(--muted); font-size:14.5px; margin-bottom:26px; max-width:60ch;}
-        .gp-root hr.rule{border:none; border-top:1px solid var(--line); margin:0 0 40px;}
+        .gp-root hr.rule{border:none; border-top:1px solid var(--line-soft); margin:0 0 40px;}
 
-        .gp-root .about-text{max-width:64ch; font-size:15.5px; color:var(--ink);}
+        .gp-root .about-text{max-width:64ch; font-size:15.5px; color:#C7CEDD;}
         .gp-root .about-text p{margin-bottom:14px;}
         .gp-root .about-text strong{color:var(--ink);}
 
         .gp-root .skills-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:14px;}
         @media (max-width:640px){ .gp-root .skills-grid{grid-template-columns:1fr;} }
         .gp-root .skill-card{
-          background:var(--surface); border:1px solid var(--line); border-radius:10px;
-          padding:16px 18px; border-top:3px solid var(--ok);
+          position:relative; background:var(--surface); border:1px solid var(--line); border-radius:10px;
+          padding:16px 18px; border-top:3px solid var(--ok); overflow:hidden;
+          transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease;
         }
+        .gp-root .skill-card::before{
+          content:""; position:absolute; inset:0;
+          background:radial-gradient(160px circle at var(--mx,50%) var(--my,50%), rgba(255,255,255,0.06), transparent 60%);
+          opacity:0; transition:opacity .25s ease; pointer-events:none;
+        }
+        .gp-root .skill-card:hover::before{opacity:1;}
+        .gp-root .skill-card:hover{transform:translateY(-3px); border-color:var(--ok); box-shadow:0 10px 26px -14px var(--ok);}
         .gp-root .skill-card:nth-child(2){border-top-color:var(--req);}
+        .gp-root .skill-card:nth-child(2):hover{border-color:var(--req); box-shadow:0 10px 26px -14px var(--req);}
         .gp-root .skill-card:nth-child(3){border-top-color:var(--violet);}
+        .gp-root .skill-card:nth-child(3):hover{border-color:var(--violet); box-shadow:0 10px 26px -14px var(--violet);}
         .gp-root .skill-card:nth-child(4){border-top-color:var(--amber);}
+        .gp-root .skill-card:nth-child(4):hover{border-color:var(--amber); box-shadow:0 10px 26px -14px var(--amber);}
         .gp-root .skill-card:nth-child(5){border-top-color:var(--req);}
+        .gp-root .skill-card:nth-child(5):hover{border-color:var(--req); box-shadow:0 10px 26px -14px var(--req);}
         .gp-root .skill-card:nth-child(6){border-top-color:var(--ok);}
         .gp-root .skill-card .k{
           font-family:var(--mono); font-size:11.5px; color:var(--muted);
@@ -370,22 +451,34 @@ export default function GowthamPortfolio() {
         }
         .gp-root .chip-row{display:flex; flex-wrap:wrap; gap:7px;}
         .gp-root .chip{
-          font-family:var(--mono); font-size:12px; background:var(--paper);
+          font-family:var(--mono); font-size:12px; background:var(--surface-2);
           border:1px solid var(--line); border-radius:6px; padding:4px 9px; color:var(--ink);
+          transition:border-color .15s ease, color .15s ease, transform .15s ease;
         }
+        .gp-root .chip:hover{border-color:var(--req); color:#93A9FF; transform:translateY(-1px);}
         .gp-root .chip.strong{border-color:var(--req); color:var(--req); background:var(--req-bg);}
+        .gp-root .chip.strong:hover{color:#93A9FF;}
 
         .gp-root .project-card{
-          background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--amber);
-          border-radius:12px; padding:22px 24px; margin-bottom:18px;
-          transition:border-color .18s ease, transform .18s ease;
+          position:relative; background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--amber);
+          border-radius:12px; padding:22px 24px; margin-bottom:18px; overflow:hidden;
+          transition:border-color .18s ease, transform .18s ease, box-shadow .18s ease;
         }
+        .gp-root .project-card::before{
+          content:""; position:absolute; inset:0;
+          background:radial-gradient(220px circle at var(--mx,50%) var(--my,50%), rgba(255,255,255,0.05), transparent 60%);
+          opacity:0; transition:opacity .25s ease; pointer-events:none;
+        }
+        .gp-root .project-card:hover::before{opacity:1;}
+        .gp-root .project-card:hover{border-color:var(--amber); transform:translateY(-3px); box-shadow:0 14px 32px -16px var(--amber);}
         .gp-root .project-card:nth-child(2){border-left-color:var(--ok);}
+        .gp-root .project-card:nth-child(2):hover{border-color:var(--ok); box-shadow:0 14px 32px -16px var(--ok);}
         .gp-root .project-card:nth-child(3){border-left-color:var(--req);}
+        .gp-root .project-card:nth-child(3):hover{border-color:var(--req); box-shadow:0 14px 32px -16px var(--req);}
         .gp-root .project-card:nth-child(4){border-left-color:var(--violet);}
-        .gp-root .project-card:hover{border-color:var(--req); border-left-width:4px; transform:translateY(-2px);}
+        .gp-root .project-card:nth-child(4):hover{border-color:var(--violet); box-shadow:0 14px 32px -16px var(--violet);}
         .gp-root .project-head{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:4px;}
-        .gp-root .project-title{font-size:17px; font-weight:700;}
+        .gp-root .project-title{font-size:17px; font-weight:700; color:var(--ink);}
         .gp-root .project-sub{font-family:var(--mono); font-size:12px; color:var(--muted); margin-bottom:14px;}
         .gp-root .response-label{
           font-family:var(--mono); font-size:11px; color:var(--muted);
@@ -394,20 +487,20 @@ export default function GowthamPortfolio() {
         .gp-root ul.result-list{list-style:none; padding:0;}
         .gp-root ul.result-list li{
           position:relative; padding-left:18px; margin-bottom:7px;
-          font-size:14.5px; color:var(--ink);
+          font-size:14.5px; color:#C7CEDD;
         }
         .gp-root ul.result-list li::before{
           content:"›"; position:absolute; left:0; color:var(--req); font-weight:700;
         }
-        .gp-root .proj-links{margin-top:14px; font-family:var(--mono); font-size:12.5px;}
+        .gp-root .proj-links{position:relative; margin-top:14px; font-family:var(--mono); font-size:12.5px;}
         .gp-root .proj-links a{margin-right:16px;}
 
         .gp-root .edu-row{
           display:flex; justify-content:space-between; align-items:baseline;
-          padding:14px 0; border-bottom:1px solid var(--line); gap:16px; flex-wrap:wrap;
+          padding:14px 0; border-bottom:1px solid var(--line-soft); gap:16px; flex-wrap:wrap;
         }
         .gp-root .edu-row:last-child{border-bottom:none;}
-        .gp-root .edu-name{font-weight:600; font-size:15px;}
+        .gp-root .edu-name{font-weight:600; font-size:15px; color:var(--ink);}
         .gp-root .edu-meta{color:var(--muted); font-size:13.5px;}
         .gp-root .edu-score{font-family:var(--mono); font-size:13px; color:var(--ok); white-space:nowrap;}
 
@@ -416,22 +509,35 @@ export default function GowthamPortfolio() {
           display:flex; justify-content:space-between; align-items:center;
           font-size:14px; padding:10px 14px; background:var(--surface);
           border:1px solid var(--line); border-radius:8px; flex-wrap:wrap; gap:6px;
+          transition:border-color .15s ease, transform .15s ease;
+          color:#C7CEDD;
         }
+        .gp-root .cert-item:hover{border-color:var(--violet); transform:translateX(3px);}
         .gp-root .cert-item .src{font-family:var(--mono); font-size:12px; color:var(--muted);}
 
-        .gp-root .contact-box{background:var(--ink); color:#DCE3EC; border-radius:12px; padding:32px 30px;}
+        .gp-root .contact-box{
+          position:relative; overflow:hidden;
+          background:linear-gradient(160deg, #0F1523 0%, #141B2C 100%);
+          border:1px solid var(--line); color:#DCE3EC; border-radius:12px; padding:32px 30px;
+        }
+        .gp-root .contact-box::after{
+          content:""; position:absolute; width:340px; height:340px; border-radius:50%;
+          background:radial-gradient(circle, rgba(108,140,255,0.16), transparent 70%);
+          top:-140px; right:-100px; pointer-events:none;
+        }
         .gp-root .contact-box .path{color:#DCE3EC;}
-        .gp-root .contact-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin-top:22px;}
+        .gp-root .contact-grid{position:relative; display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin-top:22px;}
         @media (max-width:640px){ .gp-root .contact-grid{grid-template-columns:1fr;} }
         .gp-root .contact-item{font-family:var(--mono); font-size:13.5px;}
         .gp-root .contact-item .label{color:#7C8698; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; display:block; margin-bottom:4px;}
-        .gp-root .contact-item a{color:#7CB8F0;}
+        .gp-root .contact-item a{color:#93A9FF;}
 
         .gp-root footer{padding:34px 0 60px; text-align:center; font-family:var(--mono); font-size:12px; color:var(--muted);}
 
         @media (prefers-reduced-motion: reduce){
-          .gp-root .eyebrow .dot, .gp-root .cursor{animation:none;}
+          .gp-root .eyebrow .dot, .gp-root .cursor, .gp-root .terminal::before{animation:none;}
           .gp-root .json-out{transition:none;}
+          .gp-root .reveal{opacity:1; transform:none; transition:none;}
         }
       `}</style>
 
@@ -498,7 +604,7 @@ export default function GowthamPortfolio() {
 
         <hr className="rule" />
 
-        <section id="about">
+        <section id="about" className="reveal">
           <RouteTag method="get" path="/about" status="200 OK" />
           <h2 className="section-title">Professional Summary</h2>
           <div className="about-text">
@@ -510,7 +616,7 @@ export default function GowthamPortfolio() {
 
         <hr className="rule" />
 
-        <section id="skills">
+        <section id="skills" className="reveal">
           <RouteTag method="get" path="/skills" status="200 OK" />
           <h2 className="section-title">Technical Skills</h2>
           <p className="section-sub">
@@ -520,7 +626,7 @@ export default function GowthamPortfolio() {
 
           <div className="skills-grid">
             {SKILL_GROUPS.map((group) => (
-              <div className="skill-card" key={group.label}>
+              <div className="skill-card" key={group.label} onMouseMove={handleCardPointerMove}>
                 <div className="k">{group.label}</div>
                 <div className="chip-row">
                   {group.chips.map((chip) => (
@@ -539,7 +645,7 @@ export default function GowthamPortfolio() {
 
         <hr className="rule" />
 
-        <section id="projects">
+        <section id="projects" className="reveal">
           <div className="route-tag">
             <MethodTag method="get" />
             <span className="path">/projects</span>
@@ -551,7 +657,7 @@ export default function GowthamPortfolio() {
           </p>
 
           {PROJECTS.map((proj) => (
-            <div className="project-card" key={proj.title}>
+            <div className="project-card" key={proj.title} onMouseMove={handleCardPointerMove}>
               <div className="project-head">
                 <MethodTag method={proj.method} />
                 <span className="project-title">{proj.title}</span>
@@ -576,7 +682,7 @@ export default function GowthamPortfolio() {
 
         <hr className="rule" />
 
-        <section id="education">
+        <section id="education" className="reveal">
           <RouteTag method="get" path="/education" status="200 OK" />
           <h2 className="section-title">Education &amp; Certifications</h2>
 
@@ -602,7 +708,7 @@ export default function GowthamPortfolio() {
 
         <hr className="rule" />
 
-        <section id="contact">
+        <section id="contact" className="reveal">
           <div className="contact-box">
             <div className="route-tag" style={{ marginBottom: 14 }}>
               <MethodTag method="post" />
@@ -628,16 +734,14 @@ export default function GowthamPortfolio() {
               </div>
               <div className="contact-item">
                 <span className="label">LinkedIn</span>
-                {/* TODO(conversion): placeholder — add real LinkedIn URL */}
-                <a href="https://www.linkedin.com/in/gowtham110904/" target="_blank" rel="noopener noreferrer">
+                <a href="https://www.linkedin.com/in/gowtham110904" target="_blank" rel="noopener noreferrer">
                   linkedin.com/in/gowtham110904
                 </a>
               </div>
               <div className="contact-item">
                 <span className="label">GitHub</span>
-                {/* TODO(conversion): placeholder — add real GitHub URL */}
                 <a href="https://github.com/Gowtham-1109" target="_blank" rel="noopener noreferrer">
-                 Github.com/gowtham-1109
+                  github.com/Gowtham-1109
                 </a>
               </div>
             </div>
